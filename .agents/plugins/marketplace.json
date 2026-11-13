@@ -1,0 +1,20 @@
+{
+  "name": "beautiful-cli",
+  "interface": {
+    "displayName": "Beautiful CLI"
+  },
+  "plugins": [
+    {
+      "name": "beautiful-cli",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

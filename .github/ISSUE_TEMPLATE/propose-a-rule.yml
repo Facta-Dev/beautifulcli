@@ -1,0 +1,39 @@
+name: Propose a rule
+description: Suggest a rule the skills should add, change, or drop
+labels: ["rule"]
+body:
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Which skill?
+      options:
+        - cli-best-practices (writing code)
+        - cli-review (reviewing code)
+        - cli-port (porting to a TypeScript CLI)
+        - lints config
+    validations:
+      required: true
+  - type: textarea
+    id: rule
+    attributes:
+      label: The rule
+      description: One or two sentences, phrased as guidance an agent could follow.
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: A link to the published guidance this comes from (the facta CLI handbook, the POSIX/Unix CLI conventions, the Ink documentation, the Node.js process/stream docs, the typescript-eslint rule docs, and so on).
+    validations:
+      required: true
+  - type: textarea
+    id: before
+    attributes:
+      label: What the agent writes today
+      render: typescript
+  - type: textarea
+    id: after
+    attributes:
+      label: What it should write instead
+      render: typescript

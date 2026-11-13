@@ -1,0 +1,31 @@
+{
+  "name": "beautiful-cli",
+  "version": "0.1.0",
+  "description": "Write, review, port, and enforce idiomatic cross-platform CLI and TUI tools on TypeScript + Node: three skills distilled from the facta CLI handbook, the POSIX CLI conventions, and the Ink documentation, plus a drop-in eslint config.",
+  "license": "MIT",
+  "author": {
+    "name": "Facta-Dev",
+    "url": "https://github.com/Facta-Dev"
+  },
+  "homepage": "https://github.com/Facta-Dev/beautifulcli",
+  "repository": "https://github.com/Facta-Dev/beautifulcli",
+  "keywords": [
+    "best-practices",
+    "cli",
+    "code-review",
+    "cross-platform",
+    "eslint",
+    "exit-codes",
+    "ink",
+    "porting",
+    "skill",
+    "terminal",
+    "tui",
+    "typescript"
+  ],
+  "skills": [
+    "./skills/cli-best-practices",
+    "./skills/cli-port",
+    "./skills/cli-review"
+  ]
+}

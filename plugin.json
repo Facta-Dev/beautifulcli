@@ -1,0 +1,57 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "beautiful-cli",
+  "version": "0.1.0",
+  "description": "Write, review, port, and enforce idiomatic cross-platform CLI and TUI tools on TypeScript + Node: three skills distilled from the facta CLI handbook, the POSIX CLI conventions, and the Ink documentation, plus a drop-in eslint config.",
+  "author": {
+    "name": "Facta-Dev",
+    "url": "https://github.com/Facta-Dev"
+  },
+  "homepage": "https://github.com/Facta-Dev/beautifulcli",
+  "repository": "https://github.com/Facta-Dev/beautifulcli",
+  "license": "MIT",
+  "keywords": [
+    "best-practices",
+    "cli",
+    "code-review",
+    "cross-platform",
+    "eslint",
+    "exit-codes",
+    "ink",
+    "porting",
+    "skill",
+    "terminal",
+    "tui",
+    "typescript"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Beautiful CLI",
+        "shortDescription": "Write, review, port CLIs",
+        "longDescription": "Three skills for command-line and TUI developers on TypeScript + Node, distilled from the facta CLI handbook, the POSIX CLI conventions, and the Ink documentation.\n\ncli-best-practices guides new CLI code: one headless core with TUI, print, JSON and stream-json frontends; stdout as data and stderr as diagnostics; a stable exit-code contract; TTY-aware behavior; the terminal lifecycle guard; untrusted-text sanitization; cross-platform paths, shells and signals; and the unbreakable layer contract.\n\ncli-review reviews a command, parser, output path, TUI, or diff and returns a prioritized report. Architecture and stream/exit contracts rank above everything. Every finding cites a file and line, the rule it breaks, and the smallest fix.\n\ncli-port ports POSIX shell scripts, legacy Node scripts, Click/Typer/cobra/commander CLIs, or a web flow to a structured TypeScript CLI with the same behavior. It ports the original tests first and writes a PORTING.md.\n\nThe skills contain instructions and reference text only. They make no network calls and collect no data. When a Node.js toolchain is available, the skills run tsc, eslint, and vitest on your project; without one, they work from the code alone. A drop-in eslint config is available in the GitHub repository.",
+        "developerName": "Facta-Dev",
+        "category": "Developer Tools",
+        "capabilities": [
+          "Write scriptable, cross-platform CLIs",
+          "Review CLIs with cited rules",
+          "Port scripts and legacy CLIs with the same behavior"
+        ],
+        "websiteURL": "https://github.com/Facta-Dev/beautifulcli",
+        "supportURL": "https://github.com/Facta-Dev/beautifulcli/issues",
+        "privacyPolicyURL": "https://github.com/Facta-Dev/beautifulcli/blob/main/PRIVACY.md",
+        "defaultPrompt": [
+          "Review this CLI's exit codes and output paths",
+          "Port this bash script to a structured TypeScript CLI",
+          "Design the print and JSON modes for this command"
+        ],
+        "brandColor": "#4EAA25",
+        "composerIcon": "./assets/icon.png",
+        "logo": "./assets/icon.png"
+      },
+      "publication": {
+        "release_notes": "Initial release: three CLI skills, the headless-core and stream contract, and a proven eslint config."
+      }
+    }
+  }
+}

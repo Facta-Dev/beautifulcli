@@ -1,0 +1,250 @@
+{
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "beautifulcli — Runtime Lifecycle",
+    "quality_profile": "showcase",
+    "output": "runtime-lifecycle.lifecycle.html"
+  },
+  "mainPath": [
+    "boot",
+    "route",
+    "parse",
+    "run",
+    "emit",
+    "exit0"
+  ],
+  "states": [
+    {
+      "id": "boot",
+      "type": "start",
+      "label": "bin/main",
+      "sublabel": "argv in",
+      "step": "01",
+      "tag": "entry"
+    },
+    {
+      "id": "fast",
+      "type": "decision",
+      "label": "Fast path",
+      "sublabel": "--version · --help",
+      "step": "02",
+      "tag": "gate"
+    },
+    {
+      "id": "route",
+      "type": "active",
+      "label": "Router",
+      "sublabel": "tui · print",
+      "step": "03"
+    },
+    {
+      "id": "parse",
+      "type": "active",
+      "label": "Parse",
+      "sublabel": "typed args",
+      "step": "04"
+    },
+    {
+      "id": "run",
+      "type": "active",
+      "label": "Use case",
+      "sublabel": "headless",
+      "step": "05"
+    },
+    {
+      "id": "emit",
+      "type": "active",
+      "label": "Output",
+      "sublabel": "stdout",
+      "step": "06"
+    },
+    {
+      "id": "exit0",
+      "type": "success",
+      "label": "Exit 0",
+      "sublabel": "done",
+      "step": "07",
+      "tag": "done"
+    },
+    {
+      "id": "usage",
+      "type": "failure",
+      "label": "Exit 2",
+      "sublabel": "bad args",
+      "tag": "terminal"
+    },
+    {
+      "id": "auth",
+      "type": "failure",
+      "label": "Exit 3",
+      "sublabel": "auth required",
+      "tag": "terminal"
+    },
+    {
+      "id": "denied",
+      "type": "failure",
+      "label": "Exit 4",
+      "sublabel": "forbidden",
+      "tag": "terminal"
+    },
+    {
+      "id": "raw",
+      "type": "active",
+      "label": "Raw mode",
+      "sublabel": "TUI only",
+      "tag": "automatic"
+    },
+    {
+      "id": "restore",
+      "type": "active",
+      "label": "Restore",
+      "sublabel": "cursor · mouse",
+      "tag": "automatic"
+    },
+    {
+      "id": "sigint",
+      "type": "failure",
+      "label": "Exit 130",
+      "sublabel": "SIGINT",
+      "tag": "terminal"
+    },
+    {
+      "id": "sigterm",
+      "type": "failure",
+      "label": "Exit 143",
+      "sublabel": "SIGTERM",
+      "tag": "terminal"
+    },
+    {
+      "id": "crash",
+      "type": "failure",
+      "label": "Exit 1",
+      "sublabel": "stderr line",
+      "tag": "terminal"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t1",
+      "from": "boot",
+      "to": "route"
+    },
+    {
+      "id": "t2",
+      "from": "boot",
+      "to": "fast",
+      "label": "--version · --help"
+    },
+    {
+      "id": "t3",
+      "from": "fast",
+      "to": "exit0",
+      "label": "yes · print & leave",
+      "variant": "dashed"
+    },
+    {
+      "id": "t4",
+      "from": "route",
+      "to": "parse"
+    },
+    {
+      "id": "t5",
+      "from": "parse",
+      "to": "run"
+    },
+    {
+      "id": "t6",
+      "from": "run",
+      "to": "emit"
+    },
+    {
+      "id": "t7",
+      "from": "emit",
+      "to": "exit0"
+    },
+    {
+      "id": "t8",
+      "from": "parse",
+      "to": "usage",
+      "label": "invalid args",
+      "variant": "security"
+    },
+    {
+      "id": "t9",
+      "from": "run",
+      "to": "auth",
+      "label": "no token",
+      "variant": "security"
+    },
+    {
+      "id": "t10",
+      "from": "run",
+      "to": "denied",
+      "label": "403",
+      "variant": "security"
+    },
+    {
+      "id": "t12",
+      "from": "route",
+      "to": "raw",
+      "label": "tui on a TTY",
+      "variant": "dashed"
+    },
+    {
+      "id": "t13",
+      "from": "raw",
+      "to": "restore",
+      "label": "exit · signal · crash"
+    },
+    {
+      "id": "t14",
+      "from": "restore",
+      "to": "sigint",
+      "variant": "dashed"
+    },
+    {
+      "id": "t15",
+      "from": "restore",
+      "to": "sigterm",
+      "variant": "dashed"
+    },
+    {
+      "id": "t16",
+      "from": "restore",
+      "to": "crash",
+      "label": "uncaught",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Boot and the fast path",
+      "items": [
+        "--version and --help never load the engine, the SDK or the TUI: the startup budget in CI is measured on exactly that path",
+        "the mode router decides once — tui, print, json, stream or command — and the container (config, secret store, SDK, output port, clock) is built lazily afterwards",
+        "the mode router is also where the TTY is checked: an interactive mode on a pipe refuses with an actionable message instead of hanging on a prompt"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "The terminal guard",
+      "items": [
+        "the cleanup is registered before the raw mode is entered, and it restores the cursor, the alternate screen, the mouse tracking, the bracketed paste and the title",
+        "the guard runs on exit, on SIGINT, on SIGTERM and on an uncaught exception — a crash leaves the terminal usable, not raw",
+        "in a non-TTY the guard is a no-op: a piped run emits no escape sequence and no prompt"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "The endings",
+      "items": [
+        "the exit code is the contract: 0 success, 2 usage, 3 authentication, 4 forbidden, 5 not found, 8 rate limited, 9 network, 10 server, 130 SIGINT, 143 SIGTERM",
+        "a crash prints one line on stderr; the stack is behind --debug, and the terminal is restored before the process dies",
+        "EPIPE ends the run quietly with 0 when the consumer closed the pipe — a broken pipe is not a crash",
+        "no process.exit deep in the code: the command returns the code and the process sets it"
+      ]
+    }
+  ]
+}

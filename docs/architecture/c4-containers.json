@@ -1,0 +1,296 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "beautifulcli — Container Architecture",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "all",
+        "label": "All",
+        "focus": [
+          "user",
+          "cli",
+          "core",
+          "adapters",
+          "platform",
+          "sdk",
+          "api",
+          "cfgdirs",
+          "keystore"
+        ],
+        "note": "one process: a mode router, a headless core and the adapters that reach the OS — every layer edge is an ESLint wall."
+      },
+      {
+        "id": "runtime",
+        "label": "Runtime",
+        "focus": [
+          "user",
+          "cli",
+          "core",
+          "adapters",
+          "sdk",
+          "api"
+        ],
+        "note": "stdout is data, stderr is diagnostics; the core never touches a terminal, so a piped run behaves like an interactive one."
+      },
+      {
+        "id": "state",
+        "label": "State",
+        "focus": [
+          "user",
+          "cli",
+          "core",
+          "cfgdirs",
+          "keystore"
+        ],
+        "note": "config lives in the OS state dirs and the token in the OS keystore — the only two persistence boundaries a CLI has."
+      }
+    ],
+    "output": "c4-containers.html"
+  },
+  "components": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "User or pipeline",
+      "sublabel": "terminal · pipe · CI",
+      "pos": [
+        30,
+        250
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "cli",
+      "type": "frontend",
+      "label": "CLI process",
+      "sublabel": "bin/main · mode router",
+      "pos": [
+        250,
+        250
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "Headless core",
+      "sublabel": "use cases · ports · events",
+      "pos": [
+        480,
+        250
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "sdk",
+      "type": "backend",
+      "label": "Generated SDK",
+      "sublabel": "auth · retry · envelope",
+      "pos": [
+        710,
+        250
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "api",
+      "type": "cloud",
+      "label": "Product API",
+      "sublabel": "HTTPS · server-side authz",
+      "pos": [
+        950,
+        250
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "cfgdirs",
+      "type": "database",
+      "label": "OS state dirs",
+      "sublabel": "config · data · cache · state",
+      "pos": [
+        480,
+        110
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "keystore",
+      "type": "security",
+      "label": "OS keystore",
+      "sublabel": "SecretStorePort",
+      "pos": [
+        710,
+        110
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "adapters",
+      "type": "backend",
+      "label": "Adapters",
+      "sublabel": "terminal · shell · fs · secrets",
+      "pos": [
+        480,
+        390
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "platform",
+      "type": "backend",
+      "label": "platform",
+      "sublabel": "the only OS branch",
+      "pos": [
+        710,
+        390
+      ],
+      "size": [
+        140,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "The CLI runtime — one process, one output port",
+      "wraps": [
+        "cli",
+        "core",
+        "adapters",
+        "platform",
+        "sdk"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Local state — the only persistence a CLI has",
+      "wraps": [
+        "cfgdirs",
+        "keystore"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "k1",
+      "from": "user",
+      "to": "cli",
+      "label": "argv · stdin · TTY",
+      "variant": "emphasis"
+    },
+    {
+      "id": "k2",
+      "from": "cli",
+      "to": "core",
+      "label": "mode router → use case"
+    },
+    {
+      "id": "k3",
+      "from": "core",
+      "to": "sdk",
+      "label": "SdkClient · typed request"
+    },
+    {
+      "id": "k4",
+      "from": "sdk",
+      "to": "api",
+      "label": "HTTPS · bearer · correlation id",
+      "variant": "emphasis"
+    },
+    {
+      "id": "k5",
+      "from": "core",
+      "to": "adapters",
+      "label": "ports · SecretStore · Config",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "k6",
+      "from": "adapters",
+      "to": "platform",
+      "label": "Node APIs"
+    },
+    {
+      "id": "k7",
+      "from": "core",
+      "to": "cfgdirs",
+      "label": "ConfigPort · atomic write",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "k8",
+      "from": "core",
+      "to": "keystore",
+      "label": "SecretStorePort",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "The contract, and how it is made unbreakable",
+      "items": [
+        "the contract is unbreakable and non-waivable: when a lint rule fires, the fix is to re-cut the layout — never to weaken, rename or delete the rule, and never to silence it with an eslint-disable comment, which is itself a review finding",
+        "the layer walls are pinned in lints/eslint.config.mjs: no-restricted-imports and no-restricted-globals keep the core free of process, fs, child_process, ink and @/tui; no-console forces stdout through the output port; no-eval, no-new-func and no-implied-eval make remote code impossible",
+        "scripts/check-lints.sh proves every pinned rule still fires from the marked files in lints/check/src while the clean control stays quiet, and fails if tsc --noEmit disagrees"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "The three skills that ship the contract",
+      "items": [
+        "cli-best-practices loads on every CLI edit and carries the contract digest: the layer table, the port table, the stream and exit-code contract, the terminal guard and the config precedence",
+        "cli-review writes a prioritized report where every finding cites the rule it breaks and shows the fix; cli-port ports a shell script or a Click/Typer/cobra CLI to a structured TypeScript CLI, porting the original tests first",
+        "the skills are instructions and reference text only: no runtime, no network, no data collection"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "The runtime contract",
+      "items": [
+        "stdout carries the result — text, JSON or NDJSON — and never a progress bar, a spinner, a prompt or a log line; stderr carries diagnostics",
+        "the exit code is the contract: 0 success, 2 usage, 3 authentication, 4 forbidden, 5 not found, 8 rate limited, 9 network, 10 server, 130 SIGINT, 143 SIGTERM; a usage error is 2, never 1",
+        "a non-TTY run never prompts: it fails with an actionable message and a --yes or --no-input hint; EPIPE ends the run quietly with 0 when the consumer closed the pipe"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Safety and state",
+      "items": [
+        "untrusted text is sanitized before it reaches the terminal: 7-bit ESC-prefixed CSI/OSC/DCS/PM/APC and C0/C1 control characters are stripped, OSC 52 is size-capped and OSC 8 links are scheme-validated",
+        "secrets never live in config: the token goes to the OS keystore through SecretStorePort; an env var is a CI path, not the default",
+        "workspace trust is explicit: a repository's hooks, plugins, MCP servers and shell-executing settings need a confirmation, and --print never silently trusts an arbitrary repo"
+      ]
+    }
+  ]
+}

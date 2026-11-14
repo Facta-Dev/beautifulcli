@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "beautifulcli — Async Delivery Sequence (command → core → stream)",
+    "quality_profile": "showcase",
+    "output": "outbox-sequence.sequence.html"
+  },
+  "participants": [
+    {
+      "id": "shell",
+      "type": "external",
+      "label": "Shell",
+      "sublabel": "argv · stdin · pipe"
+    },
+    {
+      "id": "cmd",
+      "type": "backend",
+      "label": "Command",
+      "sublabel": "parse → validate"
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "Core",
+      "sublabel": "use case · event stream"
+    },
+    {
+      "id": "sdk",
+      "type": "backend",
+      "label": "SdkClient",
+      "sublabel": "auth · retry · envelope"
+    },
+    {
+      "id": "api",
+      "type": "cloud",
+      "label": "Product API",
+      "sublabel": "HTTPS"
+    },
+    {
+      "id": "out",
+      "type": "frontend",
+      "label": "Output port",
+      "sublabel": "stdout · stderr"
+    }
+  ],
+  "segments": [
+    {
+      "from": 146,
+      "to": 340,
+      "label": "Invoke"
+    },
+    {
+      "from": 354,
+      "to": 560,
+      "label": "Deliver"
+    },
+    {
+      "from": 574,
+      "to": 720,
+      "label": "Settle"
+    }
+  ],
+  "messages": [
+    {
+      "id": "q1",
+      "from": "shell",
+      "to": "cmd",
+      "y": 164,
+      "label": "mycli deploy --wait --output-format stream-json",
+      "variant": "emphasis"
+    },
+    {
+      "id": "q2",
+      "from": "cmd",
+      "to": "core",
+      "y": 196,
+      "label": "deployUseCase.run(args)"
+    },
+    {
+      "id": "q3",
+      "from": "core",
+      "to": "sdk",
+      "y": 228,
+      "label": "deploys.create(payload) · idempotency key"
+    },
+    {
+      "id": "q4",
+      "from": "sdk",
+      "to": "api",
+      "y": 260,
+      "label": "POST /v1/deploys · bearer",
+      "variant": "emphasis"
+    },
+    {
+      "id": "q5",
+      "from": "api",
+      "to": "sdk",
+      "y": 292,
+      "label": "429 · Retry-After: 2",
+      "variant": "return"
+    },
+    {
+      "id": "q6",
+      "from": "sdk",
+      "to": "core",
+      "y": 324,
+      "label": "error kind: rateLimited (retryAfterSeconds)",
+      "variant": "return"
+    },
+    {
+      "id": "q7",
+      "from": "core",
+      "to": "out",
+      "y": 372,
+      "label": "event(progress) · sessionId"
+    },
+    {
+      "id": "q8",
+      "from": "core",
+      "to": "sdk",
+      "y": 404,
+      "label": "retry after the backoff window"
+    },
+    {
+      "id": "q9",
+      "from": "sdk",
+      "to": "api",
+      "y": 436,
+      "label": "POST /v1/deploys · bearer · same key",
+      "variant": "emphasis"
+    },
+    {
+      "id": "q10",
+      "from": "api",
+      "to": "sdk",
+      "y": 468,
+      "label": "200 · { ok:true, data }",
+      "variant": "return"
+    },
+    {
+      "id": "q11",
+      "from": "sdk",
+      "to": "core",
+      "y": 500,
+      "label": "envelope · correlationId",
+      "variant": "return"
+    },
+    {
+      "id": "q12",
+      "from": "core",
+      "to": "out",
+      "y": 532,
+      "label": "event(result) · ok · exitCode"
+    },
+    {
+      "id": "q13",
+      "from": "out",
+      "to": "shell",
+      "y": 596,
+      "label": "NDJSON on stdout · one event per line",
+      "variant": "return"
+    },
+    {
+      "id": "q14",
+      "from": "out",
+      "to": "shell",
+      "y": 628,
+      "label": "diagnostics on stderr · never on stdout",
+      "variant": "return"
+    },
+    {
+      "id": "q15",
+      "from": "cmd",
+      "to": "shell",
+      "y": 684,
+      "label": "exit code · 0 · 8 (rate limited) · 9 (network)",
+      "variant": "emphasis"
+    }
+  ],
+  "activations": [
+    {
+      "type": "backend",
+      "from": 158,
+      "to": 690,
+      "participant": "cmd"
+    },
+    {
+      "type": "backend",
+      "from": 190,
+      "to": 540,
+      "participant": "core"
+    },
+    {
+      "type": "backend",
+      "from": 222,
+      "to": 332,
+      "participant": "sdk"
+    },
+    {
+      "type": "backend",
+      "from": 398,
+      "to": 506,
+      "participant": "sdk"
+    },
+    {
+      "type": "cloud",
+      "from": 254,
+      "to": 298,
+      "participant": "api"
+    },
+    {
+      "type": "cloud",
+      "from": 430,
+      "to": 474,
+      "participant": "api"
+    },
+    {
+      "type": "frontend",
+      "from": 366,
+      "to": 540,
+      "participant": "out"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "The pipeline",
+      "items": [
+        "one path for every frontend: the command parses, the core runs the use case, the SDK delivers, the output port writes — the TUI, print mode and the resource subcommands all sit on it",
+        "the core never touches the terminal or the process: it emits events and returns a result, and the frontend decides how to render them",
+        "the core is the same library in a piped run and in a TTY run — only the mode router differs"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "The stream contract",
+      "items": [
+        "stream-json is newline-delimited JSON: one versioned event per line, flushed per event, and no other text on stdout",
+        "the events are start, progress, result and error, each with a sessionId; unknown event types are ignored by consumers, additive changes stay within v, a breaking change bumps it",
+        "progress and prompts belong to stderr; stdout carries the result alone, so a pipe never has to strip anything"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Delivery and settling",
+      "items": [
+        "a 429 is not a failure of the command: the SDK retries after the backoff window and honors Retry-After, and the idempotency key makes the retry safe",
+        "when the retry budget is spent, the error kind maps to exactly one exit code — 8 rate limited, 9 network or timeout, 10 server — and the error envelope still goes to stdout",
+        "EPIPE ends the run quietly with 0 when the consumer closed the pipe; a broken pipe is not a crash"
+      ]
+    }
+  ]
+}

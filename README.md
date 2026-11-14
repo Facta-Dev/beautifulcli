@@ -189,7 +189,27 @@ scripts/
 tests/                  unit, contracts, integration, e2e
 examples/
   review-cli.md         a full worked review
+docs/
+  architecture/        eight Archify diagrams (C4, slices, auth,
+                       outbox, dataflow, lifecycle) + their index
 ```
+
+## Architecture diagrams
+
+The repository ships eight [Archify](https://github.com/tt-a1i/archify) diagrams under
+[`docs/architecture/`](docs/architecture/README.md), each a standalone HTML page you can
+open, explore and share.
+
+| Diagram | What it shows |
+|---|---|
+| [c4-containers](docs/architecture/c4-containers.html) | The caller, the command, the headless core, the SDK, the API and the local stores |
+| [services-slices](docs/architecture/services-slices.architecture.html) | The layer topology and the lint walls between command, core, SDK and ports |
+| [auth-algorithm](docs/architecture/auth-algorithm.workflow.html) | The credential algorithm: precedence, the keystore, refresh and the 401/403 split |
+| [outbox-algorithm](docs/architecture/outbox-algorithm.workflow.html) | The async pipeline: event stream, backpressure, bounded retry and exit code |
+| [auth-sequence](docs/architecture/auth-sequence.sequence.html) | One authenticated request end to end, including the refresh-once path |
+| [outbox-sequence](docs/architecture/outbox-sequence.sequence.html) | The async trace in time: command → core → streamed events → envelope |
+| [database-dataflow](docs/architecture/database-dataflow.dataflow.html) | Config, secrets, state, the wire and the two output channels |
+| [runtime-lifecycle](docs/architecture/runtime-lifecycle.lifecycle.html) | Parse → validate → execute → render → exit, with the failure endings |
 
 ## Sources
 

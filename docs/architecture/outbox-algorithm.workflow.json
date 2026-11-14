@@ -1,0 +1,207 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "beautifulcli — Async Delivery: request pipeline & event stream",
+    "quality_profile": "showcase",
+    "output": "outbox-algorithm.workflow.html"
+  },
+  "lanes": [
+    {
+      "id": "cmd",
+      "label": "Command"
+    },
+    {
+      "id": "core",
+      "label": "Core"
+    },
+    {
+      "id": "sdk",
+      "label": "SdkClient"
+    },
+    {
+      "id": "net",
+      "label": "Network"
+    },
+    {
+      "id": "stream",
+      "label": "Event stream"
+    },
+    {
+      "id": "out",
+      "label": "Output port"
+    }
+  ],
+  "phases": [
+    {
+      "id": "invoke",
+      "label": "Invoke",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "deliver",
+      "label": "Deliver",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "settle",
+      "label": "Settle",
+      "fromCol": 4,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "invoke",
+    "use",
+    "call",
+    "wire",
+    "emit",
+    "settle"
+  ],
+  "nodes": [
+    {
+      "id": "invoke",
+      "lane": "cmd",
+      "col": 0,
+      "type": "frontend",
+      "label": "Command",
+      "sublabel": "parse → validate → use case"
+    },
+    {
+      "id": "use",
+      "lane": "core",
+      "col": 1,
+      "type": "backend",
+      "label": "Use case",
+      "sublabel": "headless · no process, no fs"
+    },
+    {
+      "id": "call",
+      "lane": "sdk",
+      "col": 2,
+      "type": "backend",
+      "label": "SdkClient",
+      "sublabel": "auth · retry · envelope"
+    },
+    {
+      "id": "wire",
+      "lane": "net",
+      "col": 3,
+      "type": "cloud",
+      "label": "HTTPS request",
+      "sublabel": "bearer · correlation id"
+    },
+    {
+      "id": "backoff",
+      "lane": "sdk",
+      "col": 3,
+      "type": "backend",
+      "label": "Retry with backoff",
+      "sublabel": "429 · 5xx · timeout"
+    },
+    {
+      "id": "emit",
+      "lane": "stream",
+      "col": 4,
+      "type": "backend",
+      "label": "Event stream",
+      "sublabel": "start · progress · result · error"
+    },
+    {
+      "id": "settle",
+      "lane": "out",
+      "col": 5,
+      "type": "backend",
+      "label": "Output port",
+      "sublabel": "NDJSON on stdout · diagnostics on stderr"
+    }
+  ],
+  "edges": [
+    {
+      "id": "o1",
+      "from": "invoke",
+      "to": "use",
+      "label": "validated args"
+    },
+    {
+      "id": "o2",
+      "from": "use",
+      "to": "call",
+      "label": "typed request"
+    },
+    {
+      "id": "o3",
+      "from": "call",
+      "to": "wire",
+      "label": "HTTPS · bearer",
+      "variant": "emphasis"
+    },
+    {
+      "id": "o4",
+      "from": "wire",
+      "to": "emit",
+      "label": "response · progress events"
+    },
+    {
+      "id": "o5",
+      "from": "call",
+      "to": "backoff",
+      "label": "429 · 5xx · timeout"
+    },
+    {
+      "id": "o6",
+      "from": "backoff",
+      "to": "call",
+      "route": "up-channel",
+      "label": "retry · backoff · bounded"
+    },
+    {
+      "id": "o7",
+      "from": "emit",
+      "to": "settle",
+      "label": "one event per line, flushed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "One pipeline, many frontends — SKILL.md §1",
+      "items": [
+        "one headless core, many frontends: the TUI, print mode, the resource subcommands, the RPC server and IDE bridges are clients of the same core",
+        "the engine knows nothing about terminals; the frontend decides the output, never the workflow",
+        "the command pipeline is always parse → core → output and exit code, so a headless run and an interactive run execute the same use case"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "The SDK is the only path — README.md §Why",
+      "items": [
+        "a curl | jq happy path bypasses the SDK's retries, auth and error envelope — every network call rides SdkClient",
+        "the SdkClient port is declared by the core and implemented by the generated SDK, so the core never imports the client module",
+        "every request carries the correlation id, which ends up in the logs and in the error output"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Retries map to exit codes — references/cli-contract.md §3",
+      "items": [
+        "8 rate limited — honor Retry-After from the response; 9 network, timeout or offline; 10 server error",
+        "the retry budget is bounded and every failure ends in exactly one exit code, so a CI script can branch on it",
+        "the error kind → exit code mapping is an exhaustive switch: a new kind is a compile error and a contract change"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Stream mode — references/cli-contract.md §2",
+      "items": [
+        "stream-json is newline-delimited JSON: one versioned event per line, flushed per event, and no other text on stdout",
+        "the events are start, progress, result and error; each carries a session id and a payload",
+        "unknown event types are ignored by consumers, additive changes stay within v, and a breaking change bumps it",
+        "print mode (-p) is the agent and CI path: one shot, no TUI, the final text or JSON only"
+      ]
+    }
+  ]
+}

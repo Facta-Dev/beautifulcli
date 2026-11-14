@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "beautifulcli — Dataflow: config, secrets and the wire",
+    "quality_profile": "showcase",
+    "output": "database-dataflow.dataflow.html"
+  },
+  "stages": [
+    {
+      "label": "Caller"
+    },
+    {
+      "label": "CLI"
+    },
+    {
+      "label": "Local state"
+    },
+    {
+      "label": "Wire · output"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "caller",
+      "type": "external",
+      "label": "Caller",
+      "sublabel": "argv · stdin · pipe",
+      "stage": 0,
+      "row": 0
+    },
+    {
+      "id": "command",
+      "type": "backend",
+      "label": "Command",
+      "sublabel": "parse → validate → exit code",
+      "stage": 1,
+      "row": 1,
+      "width": 160
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "Core use case",
+      "sublabel": "headless · no process",
+      "stage": 1,
+      "row": 3,
+      "width": 160
+    },
+    {
+      "id": "config",
+      "type": "database",
+      "label": "Config files",
+      "sublabel": "managed · project · user",
+      "stage": 2,
+      "row": 0
+    },
+    {
+      "id": "secrets",
+      "type": "security",
+      "label": "Token store",
+      "sublabel": "OS keystore",
+      "stage": 2,
+      "row": 2
+    },
+    {
+      "id": "state",
+      "type": "database",
+      "label": "State dirs",
+      "sublabel": "data · cache · state · logs",
+      "stage": 2,
+      "row": 4
+    },
+    {
+      "id": "sdk",
+      "type": "backend",
+      "label": "SdkClient",
+      "sublabel": "auth · retry · envelope",
+      "stage": 3,
+      "row": 0
+    },
+    {
+      "id": "api",
+      "type": "cloud",
+      "label": "Product API",
+      "sublabel": "server-side authz",
+      "stage": 3,
+      "row": 1
+    },
+    {
+      "id": "stdout",
+      "type": "frontend",
+      "label": "stdout",
+      "sublabel": "text · JSON · NDJSON",
+      "stage": 3,
+      "row": 2
+    },
+    {
+      "id": "stderr",
+      "type": "frontend",
+      "label": "stderr",
+      "sublabel": "progress · warnings · errors",
+      "stage": 3,
+      "row": 3
+    }
+  ],
+  "flows": [
+    {
+      "id": "df1",
+      "from": "caller",
+      "to": "command",
+      "label": "argv · stdin"
+    },
+    {
+      "id": "df2",
+      "from": "command",
+      "to": "core",
+      "label": "validated args",
+      "labelAt": [
+        315,
+        315
+      ]
+    },
+    {
+      "id": "df3",
+      "from": "core",
+      "to": "config",
+      "label": "ConfigPort · layered read"
+    },
+    {
+      "id": "df4",
+      "from": "core",
+      "to": "secrets",
+      "label": "SecretStorePort",
+      "variant": "emphasis",
+      "labelAt": [
+        375,
+        421
+      ]
+    },
+    {
+      "id": "df5",
+      "from": "core",
+      "to": "state",
+      "label": "rotated logs · cache",
+      "labelAt": [
+        565,
+        542
+      ]
+    },
+    {
+      "id": "df6",
+      "from": "core",
+      "to": "sdk",
+      "label": "typed request",
+      "variant": "emphasis"
+    },
+    {
+      "id": "df7",
+      "from": "sdk",
+      "to": "api",
+      "label": "HTTPS · bearer",
+      "labelAt": [
+        745,
+        201
+      ]
+    },
+    {
+      "id": "df8",
+      "from": "core",
+      "to": "stdout",
+      "label": "result · envelope",
+      "labelDx": -100
+    },
+    {
+      "id": "df9",
+      "from": "core",
+      "to": "stderr",
+      "label": "diagnostics",
+      "route": "bottom-channel",
+      "channelY": 560,
+      "labelAt": [
+        542,
+        657
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Local state",
+      "items": [
+        "state lives in the OS dirs — config, data, cache, state, runtime — never in a hard-coded ~/.config, and the path APIs pick the right one per platform",
+        "writes are atomic: a temp file, fsync, rename, plus a lock so two instances of the CLI cannot corrupt each other",
+        "the config is schema-validated and versioned; a migration runs forward and a downgrade is refused with a clear message",
+        "purge removes the local state of a project; secrets are wiped on sign-out"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Secrets and the wire",
+      "items": [
+        "the token lives in the OS keystore behind SecretStorePort; a secret in the config file, a log line or telemetry is a finding",
+        "an env var is a CI path, not the default; the flag and the env fallback exist for the pipeline, not for the developer",
+        "every request carries the correlation id, which lands in the local log and in the error output so support can find it"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Where the data goes",
+      "items": [
+        "stdout carries the result and nothing else — text, one JSON envelope or NDJSON events; progress, prompts and warnings go to stderr",
+        "the local log under the state dir is rotated and redacted; telemetry is opt-in and never contains tokens or file content",
+        "the API is the only system of record: the CLI caches and configures, it does not keep a second copy of the business data"
+      ]
+    }
+  ]
+}

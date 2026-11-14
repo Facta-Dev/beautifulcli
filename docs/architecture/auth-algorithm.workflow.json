@@ -1,0 +1,242 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "beautifulcli — Credential & Trust Algorithm",
+    "quality_profile": "showcase",
+    "output": "auth-algorithm.workflow.html"
+  },
+  "lanes": [
+    {
+      "id": "caller",
+      "label": "Caller"
+    },
+    {
+      "id": "config",
+      "label": "Config"
+    },
+    {
+      "id": "store",
+      "label": "Token store"
+    },
+    {
+      "id": "trust",
+      "label": "Trust"
+    },
+    {
+      "id": "api",
+      "label": "API"
+    },
+    {
+      "id": "exit",
+      "label": "Exit code"
+    }
+  ],
+  "phases": [
+    {
+      "id": "resolve",
+      "label": "Resolve",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "decide",
+      "label": "Trust + authorize",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "map",
+      "label": "Map the outcome",
+      "fromCol": 4,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "resolve",
+    "merge",
+    "lookup",
+    "request",
+    "ok"
+  ],
+  "nodes": [
+    {
+      "id": "resolve",
+      "lane": "config",
+      "col": 0,
+      "type": "backend",
+      "label": "Resolve config",
+      "sublabel": "policy > flags > env > files"
+    },
+    {
+      "id": "merge",
+      "lane": "config",
+      "col": 1,
+      "type": "backend",
+      "label": "Merge + validate",
+      "sublabel": "schema-checked · keeps the source"
+    },
+    {
+      "id": "lookup",
+      "lane": "store",
+      "col": 2,
+      "type": "database",
+      "label": "Read the token",
+      "sublabel": "SecretStorePort · OS keystore"
+    },
+    {
+      "id": "decide",
+      "lane": "trust",
+      "col": 2,
+      "type": "security",
+      "label": "Workspace trust",
+      "sublabel": "hooks · plugins · MCP confirmed"
+    },
+    {
+      "id": "signin",
+      "lane": "caller",
+      "col": 2,
+      "type": "frontend",
+      "label": "auth login",
+      "sublabel": "device code · printed to stderr"
+    },
+    {
+      "id": "request",
+      "lane": "api",
+      "col": 3,
+      "type": "cloud",
+      "label": "Authenticated call",
+      "sublabel": "SdkClient · bearer · correlation id"
+    },
+    {
+      "id": "deny",
+      "lane": "trust",
+      "col": 4,
+      "type": "security",
+      "label": "Server refuses",
+      "sublabel": "403 · 404 · 409 · 429"
+    },
+    {
+      "id": "map",
+      "lane": "exit",
+      "col": 4,
+      "type": "backend",
+      "label": "Map error kind",
+      "sublabel": "3 auth · 4 forbidden · 8 rate limited"
+    },
+    {
+      "id": "ok",
+      "lane": "exit",
+      "col": 5,
+      "type": "backend",
+      "label": "Exit 0",
+      "sublabel": "stdout carries the result only"
+    }
+  ],
+  "edges": [
+    {
+      "id": "a1",
+      "from": "resolve",
+      "to": "merge",
+      "label": "flags > env > files"
+    },
+    {
+      "id": "a2",
+      "from": "merge",
+      "to": "lookup",
+      "label": "token from the store"
+    },
+    {
+      "id": "a3",
+      "from": "merge",
+      "to": "decide",
+      "label": "workspace needs trust?"
+    },
+    {
+      "id": "a4",
+      "from": "merge",
+      "to": "signin",
+      "label": "no token yet"
+    },
+    {
+      "id": "a5",
+      "from": "signin",
+      "to": "lookup",
+      "label": "token stored, never echoed"
+    },
+    {
+      "id": "a6",
+      "from": "lookup",
+      "to": "request",
+      "label": "bearer header"
+    },
+    {
+      "id": "a7",
+      "from": "decide",
+      "to": "request",
+      "label": "trusted · proceed"
+    },
+    {
+      "id": "a8",
+      "from": "request",
+      "to": "deny",
+      "label": "server refuses",
+      "variant": "security"
+    },
+    {
+      "id": "a9",
+      "from": "deny",
+      "to": "map",
+      "label": "one kind → one code"
+    },
+    {
+      "id": "a10",
+      "from": "request",
+      "to": "ok",
+      "label": "2xx + envelope"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Where the credential lives — references/cli-patterns.md §5 and §6",
+      "items": [
+        "tokens live in the OS keystore behind SecretStorePort; never in config, never in logs, never in telemetry, never in --debug output",
+        "an env var is a CI path, not the default: secrets never live in config and the token store is the OS keystore",
+        "the device-code flow prints the URL and the user code to stderr, polls with the given interval, backs off on slow_down, respects expires_in and writes the token to the keystore without ever echoing it",
+        "auth status prints identity, scopes and expiry — no secrets"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Config precedence — references/cli-contract.md §4",
+      "items": [
+        "managed policy > CLI flags > environment > project local > project > user > defaults",
+        "every source is schema-validated and the merged result carries the source of each value, so config get can explain where a setting came from",
+        "state under the OS dirs — config, data, cache, state, runtime — written atomically (temp file, fsync, rename) and locked so concurrent instances are safe",
+        "migrations are versioned and a downgrade is refused with a clear message; purge removes the local state of a project and secrets are wiped on sign-out"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trust and authorization — SKILL.md §10",
+      "items": [
+        "workspace trust: a repository's hooks, plugins, MCP servers and shell-executing settings require an explicit confirmation; --print never silently trusts an arbitrary repo",
+        "dangerous flags (--dangerously-*) are loud, policy-gated and refused in an untrusted workspace",
+        "authorization is server-side: the CLI may hide an action, the API rejects the request — 3 for unauthenticated, 4 for forbidden with requiredPermission in the error",
+        "no remote code, no eval, no new Function: plugins are data plus a reviewed adapter unless the product ships a sandboxed plugin runtime"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "The exit-code contract — references/cli-contract.md §3",
+      "items": [
+        "map every SDK error kind to exactly one code; a new kind is a contract change",
+        "3 authentication required or failed · 4 permission denied · 5 not found · 6 conflict · 8 rate limited (honor Retry-After)",
+        "a usage error is 2, never 1; a permission denial is 4, never 1 — a script in CI depends on the number",
+        "the human message goes to stderr, the JSON error envelope goes to stdout, and the correlation id is shown so support can find the request"
+      ]
+    }
+  ]
+}

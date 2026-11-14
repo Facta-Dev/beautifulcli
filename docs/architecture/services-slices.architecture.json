@@ -1,0 +1,266 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "beautifulcli — Services & Slices",
+    "quality_profile": "showcase",
+    "output": "services-slices.architecture.html"
+  },
+  "components": [
+    {
+      "id": "main",
+      "type": "backend",
+      "label": "bin/main",
+      "sublabel": "fast path · mode router",
+      "pos": [
+        60,
+        100
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "commands",
+      "type": "frontend",
+      "label": "commands",
+      "sublabel": "parse → core → output",
+      "pos": [
+        320,
+        100
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "tui",
+      "type": "frontend",
+      "label": "tui",
+      "sublabel": "Ink · keybindings",
+      "pos": [
+        560,
+        100
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "contracts",
+      "type": "backend",
+      "label": "contracts",
+      "sublabel": "schemas · envelopes · exit codes",
+      "pos": [
+        800,
+        100
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "domain",
+      "type": "backend",
+      "label": "domain",
+      "sublabel": "entities · rules · pure types",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "core",
+      "sublabel": "use cases · ports · event stream",
+      "pos": [
+        320,
+        300
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "adapters",
+      "type": "backend",
+      "label": "adapters",
+      "sublabel": "terminal · shell · fs · secrets",
+      "pos": [
+        560,
+        300
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "platform",
+      "type": "backend",
+      "label": "platform",
+      "sublabel": "the only OS branch",
+      "pos": [
+        800,
+        300
+      ],
+      "size": [
+        150,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Composition root",
+      "wraps": [
+        "main"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Frontends — WALL: no command imports @/tui",
+      "wraps": [
+        "commands",
+        "tui"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Headless core — WALL: no process, fs, ink, @/tui",
+      "wraps": [
+        "domain",
+        "core"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Adapters + platform — the only OS branch",
+      "wraps": [
+        "adapters",
+        "platform"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Contracts — schemas & exit codes",
+      "wraps": [
+        "contracts"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "s1",
+      "from": "main",
+      "to": "commands",
+      "label": "mode: command"
+    },
+    {
+      "id": "s2",
+      "from": "main",
+      "to": "tui",
+      "label": "mode: tui"
+    },
+    {
+      "id": "s3",
+      "from": "commands",
+      "to": "core",
+      "label": "use case"
+    },
+    {
+      "id": "s4",
+      "from": "tui",
+      "to": "core",
+      "label": "public API only"
+    },
+    {
+      "id": "s5",
+      "from": "core",
+      "to": "domain",
+      "label": "pure rules"
+    },
+    {
+      "id": "s6",
+      "from": "core",
+      "to": "adapters",
+      "label": "ports"
+    },
+    {
+      "id": "s7",
+      "from": "adapters",
+      "to": "platform",
+      "label": "Node APIs"
+    },
+    {
+      "id": "s8",
+      "from": "commands",
+      "to": "contracts",
+      "label": "schemas · exit codes",
+      "labelDy": 71
+    },
+    {
+      "id": "s9",
+      "from": "core",
+      "to": "contracts",
+      "label": "event envelope"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "The layers — references/cli-architecture.md §1",
+      "items": [
+        "domain owns entities, rules and pure types; it imports nothing platform-specific — no process, no fs, no Ink, no SDK",
+        "core owns use cases, orchestration, ports and the event stream; it imports the domain and the ports, never the UI",
+        "commands parse, validate, call the core and map the result to an output and an exit code; the TUI renders the same core through its public API",
+        "adapters implement the ports (terminal, shell, filesystem, secrets, config, updater); platform is the only place allowed to branch on the OS",
+        "contracts holds the output schemas, the event envelopes and the exit codes, and imports nothing else"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Ports, not imports — references/cli-architecture.md §2 and §3",
+      "items": [
+        "the consumer declares the port, the adapter implements it: OutputPort and TerminalPort, ShellPort, SecretStorePort, ConfigPort, ClockPort, SdkClient, UpdaterPort, TelemetryPort, OpenerPort and ClipboardPort",
+        "a use case that needs 'the API' depends on SdkClient, not on the generated client module",
+        "bin/main builds the container lazily — config, secret store, SDK, output port, clock — and the fast path (--version, --help) does not build it",
+        "commands receive the container; they never construct adapters. The TUI receives the core's public API and the terminal port; it never builds the SDK",
+        "tests build the same container with fakes, so the use case does not change between production and test"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "The unbreakable rules — README.md §The architecture contract",
+      "items": [
+        "stdout is data; stderr is diagnostics — nothing else writes to stdout except the output port",
+        "the core never touches a terminal: no process, no @/tui, no @/commands — the engine is a library",
+        "commands never import @/tui — a command runs headless; the TUI is a separate frontend",
+        "exit codes and output schemas are contracts: a change is a version bump, not an edit",
+        "terminal state is restored on every exit path, including a crash and a signal"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "The machine gates — lints/eslint.config.mjs",
+      "items": [
+        "the layer walls are pinned by path: no-restricted-globals bans process and no-restricted-imports bans fs, node:fs, child_process, node:child_process, ink and the @/tui, @/commands patterns on src/core/** and src/domain/**",
+        "the command wall is pinned separately: ink and @/tui are banned on src/commands/** — a command is a headless frontend",
+        "no-console makes stdout go through the output port; no-eval, no-new-func and no-implied-eval make remote code impossible; no-debugger keeps the breakpoint out of the build",
+        "the type rules are pinned too: ban-ts-comment (a @ts-expect-error needs a reason), switch-exhaustiveness-check, consistent-type-imports, explicit-module-boundary-types, no-unnecessary-type-assertion, no-floating-promises and no-misused-promises",
+        "silencing is itself a finding: eslint-comments/no-unlimited-disable and require-description — fix a lint rather than silencing it"
+      ]
+    }
+  ]
+}

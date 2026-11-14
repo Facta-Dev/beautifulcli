@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "beautifulcli — Auth & Trust Sequence",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "resolve",
+        "label": "Resolve",
+        "focus": [
+          "user",
+          "cli",
+          "config",
+          "keystore"
+        ],
+        "note": "the layered config resolves first, then the token comes out of the OS keystore — never out of a flag or a log"
+      },
+      {
+        "id": "call",
+        "label": "Call",
+        "focus": [
+          "cli",
+          "keystore",
+          "api"
+        ],
+        "note": "the bearer token travels on the request; the correlation id ties the answer to the log line"
+      },
+      {
+        "id": "denied",
+        "label": "Denied",
+        "focus": [
+          "cli",
+          "api",
+          "user"
+        ],
+        "note": "authorization is server-side: the API refuses and the CLI maps the kind to exit 4"
+      }
+    ],
+    "output": "auth-sequence.sequence.html"
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "User",
+      "sublabel": "terminal · pipe"
+    },
+    {
+      "id": "cli",
+      "type": "backend",
+      "label": "CLI",
+      "sublabel": "commands · core"
+    },
+    {
+      "id": "config",
+      "type": "database",
+      "label": "Config store",
+      "sublabel": "managed · env · files"
+    },
+    {
+      "id": "keystore",
+      "type": "security",
+      "label": "Token store",
+      "sublabel": "OS keystore"
+    },
+    {
+      "id": "api",
+      "type": "cloud",
+      "label": "Product API",
+      "sublabel": "server-side authz"
+    }
+  ],
+  "segments": [
+    {
+      "from": 146,
+      "to": 320,
+      "label": "Resolve config + token"
+    },
+    {
+      "from": 334,
+      "to": 468,
+      "label": "Authenticated call"
+    },
+    {
+      "from": 482,
+      "to": 668,
+      "label": "Denied → exit 4"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "cli",
+      "y": 164,
+      "label": "mycli deploy --json",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "cli",
+      "to": "config",
+      "y": 196,
+      "label": "read layered config"
+    },
+    {
+      "id": "m3",
+      "from": "config",
+      "to": "cli",
+      "y": 226,
+      "label": "merged values + source of each",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "cli",
+      "to": "keystore",
+      "y": 258,
+      "label": "SecretStorePort.read()"
+    },
+    {
+      "id": "m5",
+      "from": "keystore",
+      "to": "cli",
+      "y": 288,
+      "label": "access token · never logged",
+      "variant": "return"
+    },
+    {
+      "id": "m6",
+      "from": "cli",
+      "to": "api",
+      "y": 352,
+      "label": "POST /v1/deploys · bearer · correlation id",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m7",
+      "from": "api",
+      "to": "cli",
+      "y": 384,
+      "label": "200 · { v:1, ok:true, data }",
+      "variant": "return"
+    },
+    {
+      "id": "m8",
+      "from": "cli",
+      "to": "user",
+      "y": 416,
+      "label": "stdout: the envelope · exit 0",
+      "variant": "return"
+    },
+    {
+      "id": "m9",
+      "from": "cli",
+      "to": "api",
+      "y": 500,
+      "label": "GET /v1/secrets · bearer"
+    },
+    {
+      "id": "m10",
+      "from": "api",
+      "to": "cli",
+      "y": 532,
+      "label": "403 forbidden · requiredPermission: secrets.read",
+      "variant": "return"
+    },
+    {
+      "id": "m11",
+      "from": "cli",
+      "to": "user",
+      "y": 564,
+      "label": "stderr: error: forbidden (requiredPermission)",
+      "variant": "return"
+    },
+    {
+      "id": "m12",
+      "from": "cli",
+      "to": "user",
+      "y": 596,
+      "label": "stdout: { ok:false, error:{ code } }",
+      "variant": "return"
+    },
+    {
+      "id": "m13",
+      "from": "cli",
+      "to": "user",
+      "y": 636,
+      "label": "exit 4 — never 1",
+      "variant": "emphasis"
+    }
+  ],
+  "activations": [
+    {
+      "type": "backend",
+      "from": 158,
+      "to": 600,
+      "participant": "cli"
+    },
+    {
+      "type": "database",
+      "from": 190,
+      "to": 232,
+      "participant": "config"
+    },
+    {
+      "type": "security",
+      "from": 252,
+      "to": 294,
+      "participant": "keystore"
+    },
+    {
+      "type": "cloud",
+      "from": 346,
+      "to": 390,
+      "participant": "api"
+    },
+    {
+      "type": "cloud",
+      "from": 494,
+      "to": 538,
+      "participant": "api"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "The token path",
+      "items": [
+        "the token is read from the OS keystore through SecretStorePort; it never travels through a flag, an env fallback in a log, or the debug output",
+        "the bearer token rides the request only; the correlation id ties the response to the log line so support can find the request",
+        "no token and no session: the CLI refuses with exit 3 and an actionable message rather than prompting in a pipe"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Config resolution",
+      "items": [
+        "precedence is managed policy > CLI flags > environment > project local > project > user > defaults",
+        "every value carries its source, so `config list` can show where a setting came from",
+        "secrets never live in the config store — a token in a file is a finding, not a convenience"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Server-side authorization",
+      "items": [
+        "the API decides access, not the CLI: the command may hide an action, the request is what gets rejected",
+        "forbidden is exit 4 with requiredPermission in the error, and the JSON error envelope stays on stdout while the human message goes to stderr",
+        "a usage error is exit 2 and a permission denial is exit 4 — a CI script branches on those numbers, so they are contracts"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "name": "beautiful-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Write, review, port, and enforce idiomatic cross-platform CLI and TUI tools on TypeScript + Node: three skills distilled from the facta CLI handbook, the POSIX CLI conventions, and the Ink documentation, plus a drop-in eslint config.",
   "license": "MIT",
   "author": {

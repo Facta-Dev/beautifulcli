@@ -1,5 +1,5 @@
 ---
-name: "<app> Add Command"
+name: add-command
 description: "Scaffold a new CLI subcommand (src/features/<scope>) in the <app> CLI - domain, application, adapters/in argv handler, contracts, and the command-registry wiring - with the contract and golden-test gate, as one change."
 division: client
 ---

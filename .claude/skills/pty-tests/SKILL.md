@@ -1,5 +1,5 @@
 ---
-name: "<app> PTY Tests"
+name: pty-tests
 description: "Writes deterministic pseudo-terminal e2e tests for the <app> CLI - spawn the compiled binary in a PTY, type keys, assert screen content through a headless emulator - covering interrupts, resize, paste and the terminal matrix."
 division: testing
 ---

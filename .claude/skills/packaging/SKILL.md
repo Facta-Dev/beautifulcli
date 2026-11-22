@@ -1,5 +1,5 @@
 ---
-name: "<app> Packaging"
+name: packaging
 description: "Builds and ships a <app> CLI artifact - the single-binary build per OS/arch, the signing and notarization, the update manifest and the installer channel - so the release is signed, monotonic and reversible."
 division: client
 ---

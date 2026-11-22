@@ -1,5 +1,5 @@
 ---
-name: "<app> Ship"
+name: ship
 description: "Prepares the <app> CLI release - the green gate evidence, the version bump, the changelog entry and the pull request body - without publishing, deploying or committing on its own."
 division: core
 ---

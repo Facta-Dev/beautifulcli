@@ -1,5 +1,5 @@
 ---
-name: "<app> Exit Code Contract"
+name: exit-code-contract
 description: "Changes a stable <app> CLI contract - an exit code, an output schema, a flag name or the stream-json envelope - with the version bump, the golden fixture and the consumers updated together, so scripts keep working."
 division: client
 ---

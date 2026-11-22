@@ -1,5 +1,5 @@
 ---
-name: "<app> Review"
+name: review
 description: "Runs the <app> CLI pre-landing checklist - layer boundaries, stream split, contract coverage, TTY safety and test adequacy - producing a severity-ranked verdict against `make ci`."
 division: core
 ---
